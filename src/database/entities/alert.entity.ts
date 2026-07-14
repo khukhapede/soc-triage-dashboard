@@ -22,16 +22,16 @@ export class Alert {
     ruleLevel: number;
 
     @Column({ type: 'text', nullable: true })
-    ruleDescription: string;
+    ruleDescription: string | null;
 
     @Column({ type: 'jsonb' })
     rawPayload: Record<string, any>; // full original alert JSON, for debugging/replay
 
     @Column({ type: 'varchar', nullable: true })
-    agentName: string;
+    agentName: string | null;
 
     @Column({ type: 'timestamptz', nullable: true })
-    alertTime: Date; // when Wazuh generated it
+    alertTime: Date | null; // when Wazuh generated it
 
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt: Date; // when we ingested it
