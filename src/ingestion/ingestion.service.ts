@@ -3,6 +3,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import chokidar, { FSWatcher } from 'chokidar';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Alert } from '../database/entities/alert.entity';
 
 interface IngestionState {
   offset: number;
@@ -19,6 +22,11 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
   private watcher: FSWatcher;
   private state: IngestionState;
   private isProcessing = false;
+
+  constructor(
+    @InjectRepository(Alert)
+    private readonly alertRepository: Repository<Alert>,
+  ) { }
 
   async onModuleInit() {
     this.logger.log('Ingestion service starting...');
@@ -143,10 +151,29 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private processAlert(alert: any) {
-    // Stub — Chapter 2 replaces this with an actual DB write
-    this.logger.log(
-      `Alert ingested: rule=${alert.rule?.id} level=${alert.rule?.level} desc="${alert.rule?.description}"`,
-    );
+  private async processAlert(alert: any) {
+    if (!alert.rule?.id || alert.rule?.level === undefined) {
+      this.logger.warn('Skipping alert with missing rule id/level');
+      return;
+    }
+
+    try {
+      const newAlert = this.alertRepository.create({
+        ruleId: parseInt(alert.rule.id, 10),
+        ruleLevel: alert.rule.level,
+        ruleDescription: alert.rule?.description ?? null,
+        rawPayload: alert,
+        agentName: alert.agent?.name ?? null,
+        alertTime: alert.timestamp ? new Date(alert.timestamp) : undefined,
+      });
+
+      await this.alertRepository.save(newAlert);
+
+      this.logger.log(
+        `Alert saved: rule=${newAlert.ruleId} level=${newAlert.ruleLevel} desc="${newAlert.ruleDescription}"`,
+      );
+    } catch (err) {
+      this.logger.error(`Failed to save alert: ${err}`);
+    }
   }
 }
