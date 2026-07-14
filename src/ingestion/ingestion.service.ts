@@ -6,6 +6,7 @@ import chokidar, { FSWatcher } from 'chokidar';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Alert } from '../database/entities/alert.entity';
+import { MitreService } from '../mitre/mitre.service';
 
 interface IngestionState {
   offset: number;
@@ -26,6 +27,7 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(Alert)
     private readonly alertRepository: Repository<Alert>,
+    private readonly mitreService: MitreService,
   ) { }
 
   async onModuleInit() {
@@ -172,6 +174,8 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         `Alert saved: rule=${newAlert.ruleId} level=${newAlert.ruleLevel} desc="${newAlert.ruleDescription}"`,
       );
+
+      await this.mitreService.mapAlertTechniques(newAlert, alert);
     } catch (err) {
       this.logger.error(`Failed to save alert: ${err}`);
     }
