@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Alert } from '../database/entities/alert.entity';
 import { MitreService } from '../mitre/mitre.service';
+import { ScoringService } from '../scoring/scoring.service';
 
 interface IngestionState {
   offset: number;
@@ -28,6 +29,7 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
     @InjectRepository(Alert)
     private readonly alertRepository: Repository<Alert>,
     private readonly mitreService: MitreService,
+    private readonly scoringService: ScoringService,
   ) { }
 
   async onModuleInit() {
@@ -130,10 +132,8 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
       });
 
       const rl = readline.createInterface({ input: stream });
-      let bytesRead = this.state.offset;
 
       rl.on('line', (line) => {
-        bytesRead += Buffer.byteLength(line, 'utf-8') + 1;
         if (!line.trim()) return;
 
         try {
@@ -145,7 +145,7 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
       });
 
       rl.on('close', () => {
-        this.state.offset = bytesRead;
+        this.state.offset = fileSize;
         resolve();
       });
 
@@ -176,6 +176,7 @@ export class IngestionService implements OnModuleInit, OnModuleDestroy {
       );
 
       await this.mitreService.mapAlertTechniques(newAlert, alert);
+      await this.scoringService.scoreAlert(newAlert);
     } catch (err) {
       this.logger.error(`Failed to save alert: ${err}`);
     }
