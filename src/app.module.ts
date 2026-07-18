@@ -6,11 +6,13 @@ import { IngestionModule } from './ingestion/ingestion.module';
 import { DatabaseModule } from './database/database.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { DispositionsModule } from './dispositions/dispositions.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
+    AuthModule,
     IngestionModule,
     AlertsModule,
     DispositionsModule,

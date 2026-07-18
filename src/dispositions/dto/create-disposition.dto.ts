@@ -7,9 +7,5 @@ export class CreateDispositionDto {
 
     @IsOptional()
     @IsString()
-    analyst?: string;
-
-    @IsOptional()
-    @IsString()
     notes?: string;
 }

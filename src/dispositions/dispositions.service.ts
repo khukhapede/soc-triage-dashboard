@@ -17,6 +17,7 @@ export class DispositionsService {
     async setDisposition(
         alertId: string,
         dto: CreateDispositionDto,
+        analyst: string,
     ): Promise<AlertDisposition> {
         const alert = await this.alertRepository.findOne({ where: { id: alertId } });
         if (!alert) {
@@ -32,7 +33,7 @@ export class DispositionsService {
 
             if (existing) {
                 existing.status = dto.status;
-                existing.analyst = dto.analyst ?? existing.analyst;
+                existing.analyst = analyst;
                 existing.notes = dto.notes ?? existing.notes;
                 return dispositionRepo.save(existing);
             }
@@ -41,7 +42,7 @@ export class DispositionsService {
                 const created = dispositionRepo.create({
                     alert,
                     status: dto.status,
-                    analyst: dto.analyst ?? null,
+                    analyst,
                     notes: dto.notes ?? null,
                 });
                 return await dispositionRepo.save(created);
