@@ -10,8 +10,8 @@ export class AlertsService {
         private readonly alertRepository: Repository<Alert>,
     ) { }
 
-    async findAll(): Promise<Alert[]> {
-        return this.alertRepository
+    async findAll(page: number, limit: number) {
+        const [data, total] = await this.alertRepository
             .createQueryBuilder('alert')
             .leftJoinAndSelect('alert.score', 'score')
             .leftJoinAndSelect('alert.disposition', 'disposition')
@@ -21,7 +21,11 @@ export class AlertsService {
             )
             .orderBy('status_priority', 'ASC')
             .addOrderBy('score.finalScore', 'DESC')
-            .getMany();
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
+
+        return { data, total, page, limit };
     }
 
     async findOne(id: string): Promise<Alert> {
